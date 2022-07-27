@@ -50,7 +50,7 @@ func (client *Client) doSubscribe(topic string, fn interface{}, serverAddr, serv
 		}
 	}()
 
-	rpcClient, err := rpc.DialHTTPPath("tcp", serverAddr, serverPath)
+	rpcClient, err := rpc.DialHTTPPath("unix", serverAddr, serverPath)
 	defer rpcClient.Close()
 	if err != nil {
 		fmt.Errorf("dialing: %v", err)
@@ -84,7 +84,7 @@ func (client *Client) Start() error {
 		server := rpc.NewServer()
 		server.Register(service)
 		server.HandleHTTP(client.path, "/debug"+client.path)
-		l, err := net.Listen("tcp", client.address)
+		l, err := net.Listen("unix", client.address)
 		if err == nil {
 			service.wg.Add(1)
 			service.started = true

@@ -60,7 +60,7 @@ func (server *Server) EventBus() Bus {
 
 func (server *Server) rpcCallback(subscribeArg *SubscribeArg) func(args ...interface{}) {
 	return func(args ...interface{}) {
-		client, connErr := rpc.DialHTTPPath("tcp", subscribeArg.ClientAddr, subscribeArg.ClientPath)
+		client, connErr := rpc.DialHTTPPath("unix", subscribeArg.ClientAddr, subscribeArg.ClientPath)
 		defer client.Close()
 		if connErr != nil {
 			fmt.Errorf("dialing: %v", connErr)
@@ -96,7 +96,7 @@ func (server *Server) Start() error {
 		rpcServer := rpc.NewServer()
 		rpcServer.Register(service)
 		rpcServer.HandleHTTP(server.path, "/debug"+server.path)
-		l, e := net.Listen("tcp", server.address)
+		l, e := net.Listen("unix", server.address)
 		if e != nil {
 			err = e
 			fmt.Errorf("listen error: %v", e)
