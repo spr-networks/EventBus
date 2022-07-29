@@ -121,8 +121,7 @@ func (bus *EventBus) Unsubscribe(topic string, handler interface{}) error {
 	bus.lock.Lock()
 	defer bus.lock.Unlock()
 	if _, ok := bus.handlers[topic]; ok && len(bus.handlers[topic]) > 0 {
-		bus.removeHandler(topic, bus.findHandlerIdx(topic, reflect.ValueOf(handler)))
-		return nil
+		return bus.removeHandler(topic, bus.findHandlerIdx(topic, reflect.ValueOf(handler)))
 	}
 	return fmt.Errorf("topic %s doesn't exist", topic)
 }
@@ -168,19 +167,21 @@ func (bus *EventBus) doPublishAsync(handler *eventHandler, topic string, args ..
 	bus.doPublish(handler, topic, args...)
 }
 
-func (bus *EventBus) removeHandler(topic string, idx int) {
+func (bus *EventBus) removeHandler(topic string, idx int) error {
 	if _, ok := bus.handlers[topic]; !ok {
-		return
+		return fmt.Errorf("topic %s doesn't exist", topic)
 	}
 	l := len(bus.handlers[topic])
 
 	if !(0 <= idx && idx < l) {
-		return
+		return fmt.Errorf("index %d of handlers in topic %s wrong", idx, topic)
 	}
 
 	copy(bus.handlers[topic][idx:], bus.handlers[topic][idx+1:])
 	bus.handlers[topic][l-1] = nil // or the zero value of T
 	bus.handlers[topic] = bus.handlers[topic][:l-1]
+
+	return nil
 }
 
 func (bus *EventBus) findHandlerIdx(topic string, callback reflect.Value) int {
