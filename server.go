@@ -58,6 +58,38 @@ func (server *Server) EventBus() Bus {
 	return server.eventBus
 }
 
+func (server *Server) Subscribers(topic string) []*SubscribeArg {
+	return server.subscribers[topic]
+}
+
+func (server *Server) RemoveSubscriber(arg *SubscribeArg) bool {
+	idx := -1
+	if topicSubscribers, ok := server.subscribers[arg.Topic]; ok {
+		for i, topicSubscriber := range topicSubscribers {
+			if *topicSubscriber == *arg {
+				idx = i
+				break
+			}
+		}
+	}
+
+	if idx == -1 {
+		return true
+	}
+
+	//TODO add a lock for subscribers here
+
+	l := len(server.subscribers[arg.Topic])
+
+	copy(server.subscribers[arg.Topic][idx:], server.subscribers[arg.Topic][idx+1:])
+	server.subscribers[arg.Topic] = server.subscribers[arg.Topic][:l-1]
+
+	// TODO we need to update EventBus handlers
+	// currently need to check HasClientSubscribed before Publish
+
+	return false
+}
+
 func (server *Server) rpcCallback(subscribeArg *SubscribeArg) func(args ...interface{}) {
 	return func(args ...interface{}) {
 		client, connErr := rpc.DialHTTPPath("unix", subscribeArg.ClientAddr, subscribeArg.ClientPath)
